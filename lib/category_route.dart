@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter_hello_rectangle/category.dart';
-import 'package:flutter_hello_rectangle/Unit.dart';
+import 'backdrop.dart';
+import 'category.dart';
+import 'category_tile.dart';
+import 'unit.dart';
+import 'unit_converter.dart';
 
 final _backgroundColor = Colors.green[100];
 
@@ -14,7 +17,9 @@ class CategoryRoute extends StatefulWidget {
 }
 
 class _CategoryRouteState extends State<CategoryRoute> {
-  final categories = <Category>[];
+  Category _defaultCategory;
+  Category _currentCategory;
+  final _categories = <Category>[];
 
   static const _categoryNames = <String>[
     'Length',
@@ -27,7 +32,7 @@ class _CategoryRouteState extends State<CategoryRoute> {
     'Currency'
   ];
 
-  static const _baseColors = <Color>[
+  static const _baseColors = <ColorSwatch>[
     Colors.teal,
     Colors.orange,
     Colors.pinkAccent,
@@ -42,21 +47,34 @@ class _CategoryRouteState extends State<CategoryRoute> {
   void initState() {
     super.initState();
     for (var i=0; i < _categoryNames.length; i++) {
-      categories.add(
-        Category(
+      var category = Category(
           text: _categoryNames[i],
           color: _baseColors[i],
           icon: Icons.cake, 
           units: _retrieveUnitList(_categoryNames[i]),
-        )
-      );
+        );
+      if (i == 0) {
+        _defaultCategory = category;
+      }
+      _categories.add(category);
     }
+  }
+
+  void _onCategoryTap(Category category) {
+    setState(() {
+      _currentCategory = category;
+    });
   }
 
   Widget _buildCategoryWidget() {
     return ListView.builder(
-      itemBuilder: (BuildContext context, int index) => categories[index],
-      itemCount: categories.length,
+      itemBuilder: (BuildContext context, int index) {
+        return CategoryTile(
+          category: _categories[index],
+          onTap: _onCategoryTap,
+        );
+      },
+      itemCount: _categories.length,
     );
   }
 
@@ -72,28 +90,23 @@ class _CategoryRouteState extends State<CategoryRoute> {
 
   @override
   Widget build(BuildContext context) {
-    final listView = Container(
-      color: _backgroundColor,
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
+    final listView = Padding(
+      padding: EdgeInsets.only(
+        left: 8.0,
+        right: 8.0,
+        bottom: 8.0,
+      ),
       child: _buildCategoryWidget(),
     );
 
-    final appBar = AppBar(
-      elevation: 0.0,
-      title: Text(
-        'Unit Converter',
-        style:TextStyle(
-          color: Colors.black,
-          fontSize: 30.0,
-        )
-      ),
-      centerTitle: true,
-      backgroundColor: _backgroundColor,
-    );
-
-    return Scaffold(
-      appBar: appBar, 
-      body: listView,
+    return Backdrop(
+      currentCategory: _currentCategory == null ? _defaultCategory :_currentCategory,
+      frontPanel: _currentCategory == null
+        ? UnitConverter(category: _defaultCategory)
+        : UnitConverter(category: _currentCategory),
+      backPanel: listView,
+      frontTitle: Text('Unit Converter'),
+      backTitle: Text('Select a Category'),
     );
   }
 }
