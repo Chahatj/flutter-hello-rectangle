@@ -66,8 +66,9 @@ class _CategoryRouteState extends State<CategoryRoute> {
     });
   }
 
-  Widget _buildCategoryWidget() {
-    return ListView.builder(
+  Widget _buildCategoryWidget(Orientation deviceOrientation) {
+    if (deviceOrientation == Orientation.portrait) {
+      return ListView.builder(
       itemBuilder: (BuildContext context, int index) {
         return CategoryTile(
           category: _categories[index],
@@ -75,7 +76,20 @@ class _CategoryRouteState extends State<CategoryRoute> {
         );
       },
       itemCount: _categories.length,
-    );
+      );
+    } else {
+      return GridView.count(
+        crossAxisCount: 2,
+        childAspectRatio: 3.0,
+        children: _categories.map((Category c) {
+          return CategoryTile(
+            category: c,
+            onTap: _onCategoryTap,
+          );
+        }).toList()
+      );
+    }
+    
   }
 
   List<Unit> _retrieveUnitList(String categoryName) {
@@ -90,13 +104,14 @@ class _CategoryRouteState extends State<CategoryRoute> {
 
   @override
   Widget build(BuildContext context) {
+    assert(debugCheckHasMediaQuery(context));
     final listView = Padding(
       padding: EdgeInsets.only(
         left: 8.0,
         right: 8.0,
         bottom: 8.0,
       ),
-      child: _buildCategoryWidget(),
+      child: _buildCategoryWidget(MediaQuery.of(context).orientation),
     );
 
     return Backdrop(

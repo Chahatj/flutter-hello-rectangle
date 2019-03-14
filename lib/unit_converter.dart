@@ -223,8 +223,7 @@ class _UnitConverterState extends State<UnitConverter> {
       ),
     );
 
-    final _converter = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    final _converter = ListView(
       children: <Widget>[
         input,
         arrows,
