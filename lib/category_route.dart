@@ -1,13 +1,14 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
+import 'api.dart';
 import 'backdrop.dart';
 import 'category.dart';
 import 'category_tile.dart';
 import 'unit.dart';
 import 'unit_converter.dart';
-
-final _backgroundColor = Colors.green[100];
-
 
 class CategoryRoute extends StatefulWidget {
   const CategoryRoute();
@@ -21,17 +22,6 @@ class _CategoryRouteState extends State<CategoryRoute> {
   Category _currentCategory;
   final _categories = <Category>[];
 
-  static const _categoryNames = <String>[
-    'Length',
-    'Area',
-    'Volume',
-    'Mass',
-    'Time',
-    'Digital Storage',
-    'Energy',
-    'Currency'
-  ];
-
   static const _baseColors = <ColorSwatch>[
     Colors.teal,
     Colors.orange,
@@ -43,22 +33,88 @@ class _CategoryRouteState extends State<CategoryRoute> {
     Colors.red
   ];
 
+  static const _icons = <String>[
+    'assets/icons/length.png',
+    'assets/icons/area.png',
+    'assets/icons/length.png',
+    'assets/icons/area.png',
+    'assets/icons/length.png',
+    'assets/icons/area.png',
+    'assets/icons/length.png',
+    'assets/icons/area.png',
+];
+
   @override
-  void initState() {
-    super.initState();
-    for (var i=0; i < _categoryNames.length; i++) {
-      var category = Category(
-          text: _categoryNames[i],
-          color: _baseColors[i],
-          icon: Icons.cake, 
-          units: _retrieveUnitList(_categoryNames[i]),
-        );
-      if (i == 0) {
-        _defaultCategory = category;
-      }
-      _categories.add(category);
+  Future<void> didChangeDependencies() async {
+    super.didChangeDependencies();
+
+    if (_categories.isEmpty) {
+      await _retrieveLocalCategories();
+      await _retrieveApiCategories();
     }
   }
+
+  Future<void> _retrieveLocalCategories() async {
+    final json = DefaultAssetBundle
+      .of(context)
+      .loadString('assets/data/regular_units.json');
+    final data = JsonDecoder().convert(await json);
+    if (data is! Map) {
+      throw ('Data retrieved from API is not a Map');
+    }
+    var categoryIndex = 0;
+    data.keys.forEach((key) {
+      final List<Unit> units = 
+        data[key].map<Unit>((dynamic data) => Unit.fromJson(data)).toList();
+      
+      var category = Category(
+        text: key,
+        units: units,
+        color: _baseColors[categoryIndex],
+        icon: _icons[categoryIndex],
+      );
+
+      setState(() {
+        if (categoryIndex == 0) {
+          _defaultCategory = category;
+        }
+        _categories.add(category);
+      });
+      categoryIndex += 1;
+    });
+  }
+
+  Future<void> _retrieveApiCategories() async {
+    setState(() {
+      _categories.add(
+        Category(
+          text: apiCategory['name'],
+          units: [],
+          color: _baseColors.last,
+          icon: _icons.last,
+        )
+      );
+    });
+    final api = Api();
+    final jsonUnits = await api.getUnits(apiCategory['route']);
+    if (jsonUnits != null) {
+      final units = <Unit>[];
+      for (var unit in jsonUnits) {
+        units.add(Unit.fromJson(unit));
+      }
+      setState(() {
+        _categories.removeLast();
+        _categories.add(
+          Category(
+            text: apiCategory['name'],
+            units: units,
+            color: _baseColors.last,
+            icon: _icons.last,
+          )
+        );
+      });
+    }
+  } 
 
   void _onCategoryTap(Category category) {
     setState(() {
@@ -104,6 +160,16 @@ class _CategoryRouteState extends State<CategoryRoute> {
 
   @override
   Widget build(BuildContext context) {
+    if (_categories.isEmpty) {
+      return Center(
+        child: Container(
+          height: 180.0,
+          width: 180.0,
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     assert(debugCheckHasMediaQuery(context));
     final listView = Padding(
       padding: EdgeInsets.only(

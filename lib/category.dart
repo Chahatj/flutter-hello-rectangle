@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 import 'unit.dart';
 
 class Category {
-  final IconData icon;
+  final String icon;
   final ColorSwatch color;
   final String text;
   final List<Unit> units;
