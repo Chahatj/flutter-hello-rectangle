@@ -20,14 +20,14 @@ class CategoryTile extends StatelessWidget {
 
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: onTap == null ? Color.fromRGBO(50, 50, 50, 0.2) : Colors.transparent,
       child: Container(
         height: _rowHeight,
         child: InkWell(
           borderRadius: _borderRadius,
           highlightColor: category.color[0],
           splashColor: category.color[1],
-          onTap: () => onTap(category),
+          onTap: () => onTap == null ? null : () => onTap(category),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
